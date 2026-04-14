@@ -31,6 +31,49 @@ from PIL import Image
 import config
 
 # ---------------------------------------------------------------------------
+# Download models from Hugging Face Hub if not available locally
+# ---------------------------------------------------------------------------
+
+def ensure_models_available():
+    """Download models from Hugging Face Hub if they don't exist locally."""
+    try:
+        from huggingface_hub import hf_hub_download
+    except ImportError:
+        st.warning("huggingface_hub not installed. Some models may not be available.")
+        return
+
+    HF_REPO_ID = "Durai29/deepfake-models"
+    MODELS = [
+        ("efficientnet_best.pth", "Best Model - 96.63% accuracy"),
+        ("best_model.pth", "Original Model - 91.98% accuracy"),
+    ]
+
+    checkpoint_dir = "checkpoints"
+    os.makedirs(checkpoint_dir, exist_ok=True)
+
+    for model_file, description in MODELS:
+        model_path = os.path.join(checkpoint_dir, model_file)
+
+        # Skip if already exists
+        if os.path.exists(model_path):
+            continue
+
+        # Download from Hugging Face
+        try:
+            with st.spinner(f"📥 Downloading {model_file} ({description})..."):
+                hf_hub_download(
+                    repo_id=HF_REPO_ID,
+                    filename=model_file,
+                    local_dir=checkpoint_dir,
+                    force_download=False
+                )
+        except Exception as e:
+            st.warning(f"Could not download {model_file}: {str(e)[:100]}")
+
+# Download models on startup
+ensure_models_available()
+
+# ---------------------------------------------------------------------------
 # Page config (must be first Streamlit call)
 # ---------------------------------------------------------------------------
 st.set_page_config(
